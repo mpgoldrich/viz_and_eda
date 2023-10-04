@@ -21,8 +21,8 @@ weather_df =
   rnoaa::meteo_pull_monitors(
     c("USW00094728", "USW00022534", "USS0023B17S"),
     var = c("PRCP", "TMIN", "TMAX"), 
-    date_min = "2021-01-01",
-    date_max = "2022-12-31") |>
+    date_min = "2022-01-01",
+    date_max = "2023-12-31") |>
   mutate(
     name = recode(
       id, 
@@ -34,6 +34,7 @@ weather_df =
   select(name, id, everything())
 ```
 
+This results in a dataframe with `r nrow(weather_df)` observations on six variables.
 
 ## Same plot from last time
 
@@ -186,5 +187,36 @@ weather_df |>
   ) |>
   ggplot(aes(x = name, y = tmax, fill = name)) +
   geom_violin()
+```
+
+
+
+## complicated FAS plot
+
+```{r}
+litters_df =
+  read_csv("data/FAS_litters.csv") |> 
+  janitor::clean_names() |> 
+  separate(group, into = c("dose", "day_of_tx"), sep = 3)
+
+pups_df = 
+  read_csv("data/FAS_pups.csv") |> 
+  janitor::clean_names()
+
+fas_df =
+  left_join(pups_df, litters_df, by = "litter_number")
+
+fas_df |> 
+  select(dose, day_of_tx, starts_with("pd")) |> 
+  pivot_longer(
+    pd_ears:pd_walk,
+    names_to = "outcome",
+    values_to = "pn_day"
+  ) |> 
+  drop_na() |> 
+  mutate(outcome = fct_reorder(outcome, pn_day)) |> 
+  ggplot(aes(x = dose, y = pn_day)) +
+  geom_violin() +
+  facet_grid(day_of_tx ~ outcome)
 ```
 
