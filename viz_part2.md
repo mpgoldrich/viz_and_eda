@@ -17,6 +17,8 @@ library(tidyverse)
     ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
 
 ``` r
+library(patchwork)
+
 knitr::opts_chunk$set(
   fig.width = 6,
   fig.asp = .6,
@@ -131,3 +133,137 @@ weather_df |>
 <img src="viz_part2_files/figure-gfm/unnamed-chunk-5-1.png" width="90%" />
 
 ## Themes
+
+``` r
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name)) +
+  geom_point(alpha = .5) +
+  labs(
+    title = "Temperature plot",
+    x = "Min daily temp (Degrees C)",
+    y = "Max daily temp",
+    color = "Location",
+    caption = "Max vs min daily temp in three locations, data from rnoaa"
+  ) +
+  viridis::scale_color_viridis(discrete = TRUE) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+    ## Warning: Removed 17 rows containing missing values (`geom_point()`).
+
+<img src="viz_part2_files/figure-gfm/unnamed-chunk-6-1.png" width="90%" />
+
+## data argument
+
+``` r
+weather_df |> 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  geom_smooth()
+```
+
+    ## `geom_smooth()` using method = 'loess' and formula = 'y ~ x'
+
+    ## Warning: Removed 17 rows containing non-finite values (`stat_smooth()`).
+
+    ## Warning: Removed 17 rows containing missing values (`geom_point()`).
+
+<img src="viz_part2_files/figure-gfm/unnamed-chunk-7-1.png" width="90%" />
+
+``` r
+nyc_weather_df =
+  weather_df |> 
+  filter(name == "CentralPark_NY")
+
+hawaii_weather_df =
+  weather_df |> 
+  filter(name == "Molokai_HI")
+
+ggplot(nyc_weather_df, aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  geom_line(data = hawaii_weather_df)
+```
+
+<img src="viz_part2_files/figure-gfm/unnamed-chunk-7-2.png" width="90%" />
+
+## `patchwork`
+
+``` r
+weather_df |> 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  facet_grid(. ~ name)
+```
+
+    ## Warning: Removed 17 rows containing missing values (`geom_point()`).
+
+<img src="viz_part2_files/figure-gfm/unnamed-chunk-8-1.png" width="90%" />
+
+``` r
+ggp_temp_scatter =
+  weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name)) +
+  geom_point(alpha = .5) +
+  theme(legend.position = "none")
+
+ggp_prcp_density =
+  weather_df |> 
+  filter(prcp > 25) |> 
+  ggplot(aes(x = prcp, fill = name)) +
+  geom_density(alpha = .5) +
+  theme(legend.position = "none")
+
+ggp_tmax_date =
+  weather_df |> 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  theme(legend.position = "bottom")
+
+(ggp_temp_scatter + ggp_prcp_density) / ggp_tmax_date
+```
+
+    ## Warning: Removed 17 rows containing missing values (`geom_point()`).
+
+    ## `geom_smooth()` using method = 'loess' and formula = 'y ~ x'
+
+    ## Warning: Removed 17 rows containing non-finite values (`stat_smooth()`).
+    ## Removed 17 rows containing missing values (`geom_point()`).
+
+<img src="viz_part2_files/figure-gfm/unnamed-chunk-9-1.png" width="90%" />
+
+## data manipulation
+
+``` r
+weather_df |> 
+  mutate(
+    name = fct_relevel(name, c("Molokai_HI", "CentralPark_NY", "Waterhole_WA"))
+  ) |> 
+  ggplot(aes(x = name, y = tmax)) +
+  geom_boxplot()
+```
+
+    ## Warning: Removed 17 rows containing non-finite values (`stat_boxplot()`).
+
+<img src="viz_part2_files/figure-gfm/unnamed-chunk-10-1.png" width="90%" />
+
+``` r
+weather_df |> 
+  mutate(
+    name = fct_reorder(name, tmax)
+  ) |>
+  ggplot(aes(x = name, y = tmax, fill = name)) +
+  geom_violin()
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `name = fct_reorder(name, tmax)`.
+    ## Caused by warning:
+    ## ! `fct_reorder()` removing 17 missing values.
+    ## ℹ Use `.na_rm = TRUE` to silence this message.
+    ## ℹ Use `.na_rm = FALSE` to preserve NAs.
+
+    ## Warning: Removed 17 rows containing non-finite values (`stat_ydensity()`).
+
+<img src="viz_part2_files/figure-gfm/unnamed-chunk-10-2.png" width="90%" />

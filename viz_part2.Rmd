@@ -5,6 +5,7 @@ output: github_document
 
 ```{r}
 library(tidyverse)
+library(patchwork)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -92,4 +93,98 @@ weather_df |>
 
 ## Themes
 
+```{r}
+weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name)) +
+  geom_point(alpha = .5) +
+  labs(
+    title = "Temperature plot",
+    x = "Min daily temp (Degrees C)",
+    y = "Max daily temp",
+    color = "Location",
+    caption = "Max vs min daily temp in three locations, data from rnoaa"
+  ) +
+  viridis::scale_color_viridis(discrete = TRUE) +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+```
+
+
+
+## data argument
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  geom_smooth()
+
+nyc_weather_df =
+  weather_df |> 
+  filter(name == "CentralPark_NY")
+
+hawaii_weather_df =
+  weather_df |> 
+  filter(name == "Molokai_HI")
+
+ggplot(nyc_weather_df, aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  geom_line(data = hawaii_weather_df)
+```
+
+
+
+## `patchwork`
+
+```{r}
+weather_df |> 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  facet_grid(. ~ name)
+```
+
+
+```{r}
+ggp_temp_scatter =
+  weather_df |> 
+  ggplot(aes(x = tmin, y = tmax, color = name)) +
+  geom_point(alpha = .5) +
+  theme(legend.position = "none")
+
+ggp_prcp_density =
+  weather_df |> 
+  filter(prcp > 25) |> 
+  ggplot(aes(x = prcp, fill = name)) +
+  geom_density(alpha = .5) +
+  theme(legend.position = "none")
+
+ggp_tmax_date =
+  weather_df |> 
+  ggplot(aes(x = date, y = tmax, color = name)) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  theme(legend.position = "bottom")
+
+(ggp_temp_scatter + ggp_prcp_density) / ggp_tmax_date
+```
+
+
+
+## data manipulation
+
+```{r}
+weather_df |> 
+  mutate(
+    name = fct_relevel(name, c("Molokai_HI", "CentralPark_NY", "Waterhole_WA"))
+  ) |> 
+  ggplot(aes(x = name, y = tmax)) +
+  geom_boxplot()
+
+weather_df |> 
+  mutate(
+    name = fct_reorder(name, tmax)
+  ) |>
+  ggplot(aes(x = name, y = tmax, fill = name)) +
+  geom_violin()
+```
 
